@@ -1,0 +1,3 @@
+/home/ryoo/CLionProjects/QRcode/qrFindbyQuaOuter/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/ryoo/CLionProjects/QRcode/qrFindbyQuaOuter/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/ryoo/CLionProjects/QRcode/qrFindbyQuaOuter/cmake-build-debug/CMakeFiles/qrFindbyQuaOuter.dir

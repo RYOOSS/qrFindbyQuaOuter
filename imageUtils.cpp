@@ -30,6 +30,86 @@ namespace ryoo {
         _gen_equ = L._gen_equ;
     }
 
+
+    float getSTD(Eigen::VectorXf length_qrOnBenchMarkPlane) {
+
+        Eigen::VectorXf length_qr_mean(length_qrOnBenchMarkPlane.size());
+        length_qr_mean.fill(length_qrOnBenchMarkPlane.mean());
+        float std = sqrt(
+                (length_qrOnBenchMarkPlane - length_qr_mean).array().square().sum() / length_qr_mean.size());
+        return std;
+    }
+
+    Eigen::MatrixXf getBack2Space(std::vector<Point2f> outCorner, Eigen::MatrixXf cameraIntrinsics) {
+        float L = 40.0 + 40.0 / 21.0 * 4.0;
+        Eigen::MatrixXf dst(4, 3);
+        dst.row(0) << outCorner[0].x, outCorner[0].y, 1.0;
+        dst.row(1) << outCorner[1].x, outCorner[1].y, 1.0;
+        dst.row(2) << outCorner[3].x, outCorner[3].y, 1.0;
+        dst.row(3) << outCorner[2].x, outCorner[2].y, 1.0;
+
+        Eigen::MatrixXf qrOnNominalPlane = (cameraIntrinsics.inverse() * dst.transpose()).transpose();
+        (Eigen::MatrixXf(4, 3));
+
+        int num = 1;
+        float length_qr_std = 1;
+        Eigen::VectorXf t_BenchMark(4), length_qrOnBenchMarkPlane(6), length_qr_devition(6), length_qr_mean(6);
+        Eigen::MatrixXf tempNominal(3, 3), qrOnBenchMarkPlane(4, 3), vector_qrOnBenchMarkPlane(6, 3);
+        while (1e-7 < length_qr_std && num < 100) {
+
+            tempNominal << qrOnNominalPlane.row(1), -qrOnNominalPlane.row(2), qrOnNominalPlane.row(3);
+            t_BenchMark << 1, (qrOnNominalPlane.row(0) * tempNominal.inverse()).transpose();
+//            std::cout << qrOnNominalPlane << std::endl;
+            for (int i = 0; i < t_BenchMark.size(); ++i) {
+                qrOnBenchMarkPlane.row(i) = qrOnNominalPlane.row(i) * t_BenchMark(i);
+            }
+
+            vector_qrOnBenchMarkPlane << qrOnBenchMarkPlane.row(1) - qrOnBenchMarkPlane.row(0),
+                    qrOnBenchMarkPlane.row(2) - qrOnBenchMarkPlane.row(1),
+                    qrOnBenchMarkPlane.row(3) - qrOnBenchMarkPlane.row(2),
+                    qrOnBenchMarkPlane.row(0) - qrOnBenchMarkPlane.row(3),
+                    qrOnBenchMarkPlane.row(2) - qrOnBenchMarkPlane.row(0),
+                    qrOnBenchMarkPlane.row(3) - qrOnBenchMarkPlane.row(1);
+
+            length_qrOnBenchMarkPlane
+                    << (qrOnBenchMarkPlane.row(1) - qrOnBenchMarkPlane.row(0)).norm(),
+                    (qrOnBenchMarkPlane.row(2) - qrOnBenchMarkPlane.row(1)).norm(),
+                    (qrOnBenchMarkPlane.row(3) - qrOnBenchMarkPlane.row(2)).norm(),
+                    (qrOnBenchMarkPlane.row(0) - qrOnBenchMarkPlane.row(3)).norm(),
+                    (qrOnBenchMarkPlane.row(2) - qrOnBenchMarkPlane.row(0)).norm() / sqrt(2.0),
+                    (qrOnBenchMarkPlane.row(3) - qrOnBenchMarkPlane.row(1)).norm() / sqrt(2.0);
+//            std::cout << length_qrOnBenchMarkPlane << std::endl;
+            length_qr_mean.fill(length_qrOnBenchMarkPlane.mean());
+            length_qr_devition = length_qrOnBenchMarkPlane - length_qr_mean;
+            length_qr_std = getSTD(length_qrOnBenchMarkPlane);
+            Eigen::MatrixXf operatorRectify(4, 6), tempRectify(6, 3);
+            operatorRectify << 1, 0, 0, -1, 1, 0,
+                    -1, 1, 0, 0, 0, 1,
+                    0, -1, 1, 0, -1, 0,
+                    0, 0, -1, 1, 0, -1;
+            for (int i = 0; i < 3; ++i) {
+                tempRectify.col(i) =
+                        vector_qrOnBenchMarkPlane.col(i).array() / length_qrOnBenchMarkPlane.array();
+            }
+
+            Eigen::MatrixXf qrRectifyOnBenchMarkPlane =
+                    qrOnBenchMarkPlane + operatorRectify * length_qr_devition.asDiagonal() * tempRectify;
+            Eigen::MatrixXf qrRectifyOnNominalPlane(4, 3);
+            for (int i = 0; i < 3; ++i) {
+                qrRectifyOnNominalPlane.col(i) =
+                        qrRectifyOnBenchMarkPlane.col(i).array() / qrRectifyOnBenchMarkPlane.col(2).array();
+            }
+            Eigen::MatrixXf qrNewOnNominalPlane = (qrOnNominalPlane + qrRectifyOnNominalPlane) / 2;
+            qrOnNominalPlane = qrNewOnNominalPlane;
+            num++;
+        }
+        Eigen::MatrixXf qrSquareInSpace(4, 3);
+        qrSquareInSpace = qrOnBenchMarkPlane * L / length_qrOnBenchMarkPlane.mean();
+        std::cout << num << std::endl << length_qr_std << std::endl;
+        return qrSquareInSpace;
+
+    }
+
     RelatedPoints find2PointsFurthest(std::vector<Point2f> points) {
         RelatedPoints furthest2Points;
 
@@ -73,11 +153,11 @@ namespace ryoo {
     }
 
     /*
-     * x          x
-     *   \        |
-     *     x      x
-     *       \    |
-     *  x--x -----X
+     *  x      x
+     *   \     |
+     *     x   x
+     *       \ |
+     *  x--x --X
      */
     Point2f get3LinesIntersection(Line l1, Line l2, Line l3) {
         Eigen::MatrixXf A(3, 2);
@@ -205,18 +285,17 @@ namespace ryoo {
     }
 
 
-    void sharpen2D(const Mat &image,Mat &result)
-    {
+    void sharpen2D(const Mat &image, Mat &result) {
         // 首先构造一个内核
-        Mat kernel(3,3,CV_32F,Scalar(0));
+        Mat kernel(3, 3, CV_32F, Scalar(0));
         /// 对 对应内核进行赋值
-        kernel.at<float>(1,1) = 5.0;
-        kernel.at<float>(0,1) = -1.0;
-        kernel.at<float>(2,1) = -1.0;
-        kernel.at<float>(1,0) = -1.0;
-        kernel.at<float>(1,2) = -1.0;
+        kernel.at<float>(1, 1) = 5.0;
+        kernel.at<float>(0, 1) = -1.0;
+        kernel.at<float>(2, 1) = -1.0;
+        kernel.at<float>(1, 0) = -1.0;
+        kernel.at<float>(1, 2) = -1.0;
         /// 对图像进行滤波操作
-        filter2D(image,result,image.depth(),kernel);
+        filter2D(image, result, image.depth(), kernel);
     }
 
 

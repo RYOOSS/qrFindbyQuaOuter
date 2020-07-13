@@ -174,7 +174,7 @@ vector<Point2f> getOuterCornerSubPixel(const Mat &img, const vector<vector<Point
     goodFeaturesToTrack(codeContour, outerCorner, 4, 0.01, 10, Mat(), 3, false, 0.04);
     cornerSubPix(codeContour, outerCorner, Size(3, 3), Size(-1, -1), criteria);
     sortPointsForPerspective(outerCorner);
-    cout << "outer Corner Pixel is " << endl << outerCorner << endl;
+
     return outerCorner;
 
 }
@@ -268,18 +268,16 @@ Mat imgFindQr(const Mat &imgBinary, Mat img) {
     vector<Vec4i> hierarchy;
     vector<vector<Point>> contours;
     findContours(imgBinary, contours, hierarchy, RETR_TREE, CHAIN_APPROX_NONE); // 轮廓
-//    Mat imgContours=Mat::zeros(img.rows,img.cols,CV_8UC3);
-//    for (int j = 0; j <contours.size() ; ++j) {
-//        drawContours(imgContours, contours,j , Scalar(0, 0, 255), 2);
-//    }
-//    imshow("contours",imgContours);
     vector<Vec4i> blockConfid = filterBlock(img, contours, hierarchy); // 信任特征块序号
-    if (blockConfid.empty()) { return img; } //确保信任特征块非空
-
+    if (blockConfid.empty()) { return img; } //确保信任特征块非空cZ
     vector<vector<int>> outLabel = classifyMultiQr(blockConfid); //多特征块归类多二维码中
-    for (int i = 0; i <outLabel.size() ; ++i) {
-        drawContours(img,contours,outLabel[i][0],Scalar(0, 255, 0), 1, 8);
-    }
+//    for (int i = 0; i < outLabel.size(); ++i) {
+//
+//        if (contourArea(contours[outLabel[i][0]]) / 30 < contourArea(contours[outLabel[i][2]]) <
+//            contourArea(contours[outLabel[i][0]]) / 20) {
+//            drawContours(img, contours, outLabel[i][0], Scalar(0, 255, 0), 1, 8);
+//        }
+//    }
     if (checkQRLabelEmpty(outLabel)) { return img; }; //确保特征块非空
 
     vector<Mat> qrCodes;
@@ -293,21 +291,35 @@ Mat imgFindQr(const Mat &imgBinary, Mat img) {
     for (int i = 0; i < outLabel.size(); ++i) {
 
         Mat qrCode;
-        std::cout << "\033[31mstart\033[0m" << std::endl;
+
         vector<Point2f> outerCorner = getOuterCornerSubPixel(img, contours, outLabel[i][0]);
         if (checkOuterCornersEmpty(outerCorner)) { continue; }
+        std::cout << "\033[31mouter Corner Pixel is\033[0m" << std::endl << outerCorner << std::endl;
 
-        std::cout << "\033[31mfirst\033[0m" << std::endl;
         Mat perTran = getPerspectiveTransform(outerCorner, qrFrame);
-        cout << perTran << endl;
 
-        std::cout << "\033[31msecond\033[0m" << std::endl;
+
         warpPerspective(img, qrCode, perTran, Size(23, 23));
 
         qrCodes.push_back(qrCode);
 
-        std::cout << "\033[31mlast\033[0m" << std::endl;
+
         decoded_infos.push_back(deCode(qrCodes[i]));
+//        if (decoded_infos[i] == "093100JIYINxxx") {
+        if (decoded_infos[i] == "087100JIYINxxx") {
+            Eigen::MatrixXf qrSquareInSpace = getBack2Space(outerCorner, cameraIntrinsics);
+            std::cout << "\033[31mQRcode in the Space\033[0m" << std::endl << qrSquareInSpace << std::endl;
+            Eigen::MatrixXf qrPose(4, 4), skewX(3, 3);
+            Eigen::VectorXf qrPoseX(3), qrPoseY(3), qrPoseZ(3), qrPoseP(3);
+            qrPoseX = (qrSquareInSpace.row(1) - qrSquareInSpace.row(0)).normalized().transpose();
+            qrPoseY = (qrSquareInSpace.row(2) - qrSquareInSpace.row(1)).normalized().transpose();
+            skewX << 0, -qrPoseX(2), qrPoseX(1), qrPoseX(2), 0, -qrPoseX(0), -qrPoseX(1), qrPoseX(0), 0;
+            qrPoseZ = skewX * qrPoseY;
+            qrPoseP << qrSquareInSpace.col(0).mean(), qrSquareInSpace.col(1).mean(), qrSquareInSpace.col(2).mean();
+            qrPose << qrPoseX, qrPoseY, qrPoseZ, qrPoseP, 0, 0, 0, 1;
+            std::cout << "\033[31mTransform between end and qr is \033[0m" << std::endl << qrPose << std::endl;
+        }
+
     }
 
     for (int k = 0; k < decoded_infos.size(); ++k) {
@@ -336,51 +348,51 @@ int main(int argc, char **argv) {
 
     cameraIntrinsics << 1.118687327324564e+03, 0.0, 703.25397, 0, 1.135263811351046e+03, 482.50630, 0.0, 0.0, 1.0;
     Mat image, res, imgBinary;
-//    image = read1Image();
-////      vector<  string> decoded_info;
-////      vector<Point> points;
-////      vector<Mat> straight_qrcode;
-////    QRCodeDetector qrdetector =QRCodeDetector();
-////    qrdetector.detectAndDecodeMulti(img,decoded_info,points,straight_qrcode);
-////      string name ="demo";
-////
-////    for (int i = 0; i < straight_qrcode.size(); ++i) {
-////        name.append(  to_string(i+1));
-////        imshow(name, straight_qrcode[i]);
-////
-////    }
-////    waitKey();
-//    imgBinary = preProcessImg(image);
-//    res = imgFindQr(imgBinary, image);
-//    imshow(" ", imgBinary);
-//    imshow("demo", image);
+    image = read1Image();
+//      vector<  string> decoded_info;
+//      vector<Point> points;
+//      vector<Mat> straight_qrcode;
+//    QRCodeDetector qrdetector =QRCodeDetector();
+//    qrdetector.detectAndDecodeMulti(img,decoded_info,points,straight_qrcode);
+//      string name ="demo";
+//
+//    for (int i = 0; i < straight_qrcode.size(); ++i) {
+//        name.append(  to_string(i+1));
+//        imshow(name, straight_qrcode[i]);
+//
+//    }
 //    waitKey();
-//    return 0;
+    imgBinary = preProcessImg(image);
+    res = imgFindQr(imgBinary, image);
+    imshow(" ", imgBinary);
+    imshow("demo", image);
+    waitKey();
+    return 0;
 
 
 //
-    VideoCapture cap;
-    cap.open(5);
-
-    if (!cap.isOpened())
-        return -1;
-    cap.set(CAP_PROP_FRAME_WIDTH, 1280);
-    cap.set(CAP_PROP_FRAME_HEIGHT, 800);
-    cout << "The Intrinsics of camera is " << endl << cameraIntrinsics << endl;
-    while (true) {
-        cap >> image;//等价于cap.read(frame)
-        imgBinary = preProcessImg(image);
-        res = imgFindQr(imgBinary, image);
-        imshow(" ", imgBinary);
-        imshow("test", res);
-        char c = waitKey(66);
-        if (image.empty())
-            break;
-        if (c == 27)
-            break;
-
-    }
-    cap.release();
-    destroyAllWindows();
-    return 0;
+//    VideoCapture cap;
+//    cap.open(0);
+//
+//    if (!cap.isOpened())
+//        return -1;
+//    cap.set(CAP_PROP_FRAME_WIDTH, 1280);
+//    cap.set(CAP_PROP_FRAME_HEIGHT, 800);
+//    cout << "The Intrinsics of camera is " << endl << cameraIntrinsics << endl;
+//    while (true) {
+//        cap >> image;//等价于cap.read(frame)
+//        imgBinary = preProcessImg(image);
+//        res = imgFindQr(imgBinary, image);
+//        imshow(" ", imgBinary);
+//        imshow("test", res);
+//        char c = waitKey(66);
+//        if (image.empty())
+//            break;
+//        if (c == 27)
+//            break;
+//
+//    }
+//    cap.release();
+//    destroyAllWindows();
+//    return 0;
 }

@@ -6,13 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/ryoo/CLionProjects/QRcode/qrFindbyQuaOuter/imageUtils.cpp
-imageUtils.h
-/home/ryoo/CLionProjects/QRcode/qrFindbyQuaOuter/imageUtils.h
-utility
--
-
-/home/ryoo/CLionProjects/QRcode/qrFindbyQuaOuter/imageUtils.h
+../imageUtils.h
 opencv2/opencv.hpp
 -
 iostream
@@ -20,8 +14,40 @@ iostream
 cmath
 -
 Eigen/Dense
-/home/ryoo/CLionProjects/QRcode/qrFindbyQuaOuter/Eigen/Dense
+../Eigen/Dense
 map
+-
+opencv2/core/eigen.hpp
+-
+
+/home/ryoo/CLionProjects/QRcode/qrFindbyQuaOuter/main.cpp
+iostream
+-
+cmath
+-
+Eigen/Dense
+/home/ryoo/CLionProjects/QRcode/qrFindbyQuaOuter/Eigen/Dense
+opencv2/opencv.hpp
+-
+opencv2/core/eigen.hpp
+-
+zxing/MultiFormatReader.h
+-
+zxing/LuminanceSource.h
+-
+zxing/MatSource.h
+-
+zxing/DecodeHints.h
+-
+zxing/Binarizer.h
+-
+zxing/BinaryBitmap.h
+-
+zxing/qrcode/QRCodeReader.h
+-
+zxing/common/GlobalHistogramBinarizer.h
+-
+imageUtils.h
 -
 
 /usr/local/include/eigen3/Eigen/Cholesky
@@ -1277,6 +1303,10 @@ memory
 -
 type_traits
 -
+
+/usr/local/include/opencv4/opencv2/core/eigen.hpp
+opencv2/core.hpp
+/usr/local/include/opencv4/opencv2/core/opencv2/core.hpp
 
 /usr/local/include/opencv4/opencv2/core/fast_math.hpp
 opencv2/core/cvdef.h

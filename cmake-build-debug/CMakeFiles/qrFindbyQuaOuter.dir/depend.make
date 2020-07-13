@@ -226,6 +226,7 @@ CMakeFiles/qrFindbyQuaOuter.dir/imageUtils.cpp.o: /usr/local/include/opencv4/ope
 CMakeFiles/qrFindbyQuaOuter.dir/imageUtils.cpp.o: /usr/local/include/opencv4/opencv2/core/cvstd.hpp
 CMakeFiles/qrFindbyQuaOuter.dir/imageUtils.cpp.o: /usr/local/include/opencv4/opencv2/core/cvstd.inl.hpp
 CMakeFiles/qrFindbyQuaOuter.dir/imageUtils.cpp.o: /usr/local/include/opencv4/opencv2/core/cvstd_wrapper.hpp
+CMakeFiles/qrFindbyQuaOuter.dir/imageUtils.cpp.o: /usr/local/include/opencv4/opencv2/core/eigen.hpp
 CMakeFiles/qrFindbyQuaOuter.dir/imageUtils.cpp.o: /usr/local/include/opencv4/opencv2/core/fast_math.hpp
 CMakeFiles/qrFindbyQuaOuter.dir/imageUtils.cpp.o: /usr/local/include/opencv4/opencv2/core/hal/interface.h
 CMakeFiles/qrFindbyQuaOuter.dir/imageUtils.cpp.o: /usr/local/include/opencv4/opencv2/core/hal/msa_macros.h

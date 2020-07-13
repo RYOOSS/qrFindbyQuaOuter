@@ -6,6 +6,7 @@
 #include <cmath>
 #include "Eigen/Dense"
 #include <map>
+#include <opencv2/core/eigen.hpp>
 
 using namespace cv;
 namespace ryoo {
@@ -50,6 +51,10 @@ namespace ryoo {
         double _length;
         Eigen::RowVector3d _gen_equ = {1.0, -1.0, 0.0};
     };
+
+    Eigen::MatrixXf getBack2Space(std::vector<Point2f> src, Eigen::MatrixXf cameraIntrinsics);
+
+    float getSTD(Eigen::VectorXf length_qrOnBenchMarkPlaneInCamera);
 
     Point2f get3LinesIntersection(Line l1, Line l2, Line l3);
 
